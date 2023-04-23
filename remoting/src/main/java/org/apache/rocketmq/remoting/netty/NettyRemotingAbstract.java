@@ -194,11 +194,11 @@ public abstract class NettyRemotingAbstract {
         }
     }
 
-    public static void writeResponse(Channel channel, RemotingCommand request, @Nullable RemotingCommand response) {
+    public static void writeResponse(Channel channel, RemotingCommand request, RemotingCommand response) {
         writeResponse(channel, request, response, null);
     }
 
-    public static void writeResponse(Channel channel, RemotingCommand request, @Nullable RemotingCommand response,
+    public static void writeResponse(Channel channel, RemotingCommand request, RemotingCommand response,
         Consumer<Future<?>> callback) {
         if (response == null) {
             return;
