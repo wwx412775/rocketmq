@@ -29,6 +29,7 @@ import org.apache.rocketmq.client.consumer.rebalance.AllocateMessageQueueAverage
 import org.apache.rocketmq.client.consumer.store.OffsetStore;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.client.hook.ConsumeMessageHook;
 import org.apache.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl;
 import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
 import org.apache.rocketmq.client.trace.TraceDispatcher;
@@ -148,6 +149,11 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * Message listener
      */
     private MessageListener messageListener;
+
+    /**
+     * Listener to call if message queue assignment is changed.
+     */
+    private MessageQueueListener messageQueueListener;
 
     /**
      * Offset Storage
@@ -417,10 +423,9 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
         if (enableMsgTrace) {
             try {
                 AsyncTraceDispatcher dispatcher = new AsyncTraceDispatcher(consumerGroup, TraceDispatcher.Type.CONSUME, customizedTraceTopic, rpcHook);
-                dispatcher.setHostConsumer(this.getDefaultMQPushConsumerImpl());
+                dispatcher.setHostConsumer(this.defaultMQPushConsumerImpl);
                 traceDispatcher = dispatcher;
-                this.getDefaultMQPushConsumerImpl().registerConsumeMessageHook(
-                    new ConsumeMessageTraceHookImpl(traceDispatcher));
+                this.defaultMQPushConsumerImpl.registerConsumeMessageHook(new ConsumeMessageTraceHookImpl(traceDispatcher));
             } catch (Throwable e) {
                 log.error("system mqtrace hook init failed ,maybe can't send msg trace data");
             }
@@ -858,6 +863,18 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
         this.defaultMQPushConsumerImpl.resume();
     }
 
+    public boolean isPause() {
+        return this.defaultMQPushConsumerImpl.isPause();
+    }
+
+    public boolean isConsumeOrderly() {
+        return this.defaultMQPushConsumerImpl.isConsumeOrderly();
+    }
+
+    public void registerConsumeMessageHook(final ConsumeMessageHook hook) {
+        this.defaultMQPushConsumerImpl.registerConsumeMessageHook(hook);
+    }
+
     /**
      * This method will be removed in a certain version after April 5, 2020, so please do not use this method.
      */
@@ -974,5 +991,13 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
 
     public void setClientRebalance(boolean clientRebalance) {
         this.clientRebalance = clientRebalance;
+    }
+
+    public MessageQueueListener getMessageQueueListener() {
+        return messageQueueListener;
+    }
+
+    public void setMessageQueueListener(MessageQueueListener messageQueueListener) {
+        this.messageQueueListener = messageQueueListener;
     }
 }
